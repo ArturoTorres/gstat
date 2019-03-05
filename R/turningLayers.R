@@ -84,7 +84,7 @@
 # dist_grid <- as.data.frame(cbind("spacelag" = rep(1:150*1., each=4),
 #                                  "timelag" = rep(1:4, 150)))
 
-# CAVE: distgrid must ahve the correct spatial and temporal metrics
+# CAVE: distgrid must have the correct spatial and temporal metrics
 
 tbOperator <- function(model, dist_grid) {
   r <- dist_grid$spacelag
