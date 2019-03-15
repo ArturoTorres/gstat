@@ -46,38 +46,173 @@ covfn.ST = function(x, y = x, model, ...) {
 
 ## krigeST
 krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
-                    nmax=Inf, stAni=NULL,
+                    nmax=Inf, nmaxTime=Inf, stAni=NULL, bufferNmax=2,
                     computeVar = FALSE, fullCovariance = FALSE,
-                    bufferNmax=2, progress=TRUE) {
+                    progress=TRUE) {
+  
   stopifnot(inherits(modelList, "StVariogramModel") || is.function(modelList))
   stopifnot(inherits(data, c("STF", "STS", "STI")) & inherits(newdata, c("STF", "STS", "STI"))) 
   stopifnot(identical(proj4string(data@sp), proj4string(newdata@sp)))
   stopifnot(class(data@time) == class(newdata@time))
   stopifnot(nmax > 0)
   
-  if(!is.function(modelList) && is.null(attr(modelList,"temporal unit")))
-    warning("The spatio-temporal variogram model does not carry a time unit attribute: krigeST cannot check whether the temporal distance metrics coincide.")
+  tUnitModel <- attr(modelList, "temporal unit")
+  tUnitData <- units(abs(outer(index(data@time[1]), index(newdata@time[1]), "-")))
   
-  if(nmax < Inf) # local neighbourhood ST kriging:
-    return(krigeST.local(formula = formula, data = data, 
-                         newdata = newdata, modelList = modelList, beta=beta, # y=y, # for later use
-                         nmax = nmax, stAni = stAni, 
-                         computeVar = computeVar, fullCovariance = fullCovariance, 
-                         bufferNmax = bufferNmax, progress = progress))
+  if (is.null(tUnitModel)) {
+    warning("The spatio-temporal variogram model does not carry the strongly recommended attribute 'temporal unit'.\n The unit '", tUnitData,
+            "' has been assumed. krigeST could not check whether the temporal distances between locations and in the variogram coincide.")
+    tUnit <- tUnitData
+    attr(modelList, "temporal unit") <- tUnit
+  } else {
+    tUnit <- tUnitModel
+    message("Using the following time unit: ", tUnit)
+  }
+
+  if (fullCovariance & any(c(nmax, nmaxTime) < Inf)) {
+    fullCovariance <- FALSE
+    warning("\"fullCovariance\" will be ignored for any local kriging variant.")
+  }
   
-  df <- krigeST.df(formula = formula, data = data, newdata = newdata, 
-                   modelList = modelList, beta = beta, y = y, 
-                   ..., 
-                   nmax=nmax, stAni=stAni,
-                   computeVar = computeVar, fullCovariance = fullCovariance,
-                   bufferNmax = bufferNmax, progress = progress)
-  
-  # wrapping the predictions in ST*DF again
-  if (!fullCovariance)
-    addAttrToGeom(geometry(newdata), df)
-  else
-    df
+  # check for time block wise processing
+  if (any(nmaxTime < Inf)) { # time block processing
+    if (length(nmaxTime) == 1)
+      nmaxTime <- c(-nmaxTime, nmaxTime)
+    
+    if (length(nmaxTime) > 2) 
+      stop("\"nmaxTime\" must have length 1 (equally back- and forward in time) or 2 (for different gaps back- and forward in time).")
+    
+    stopifnot(nmaxTime[1] <= nmaxTime[2])
+    
+    timeInd <- index(newdata@time)
+    nmaxTime <- switchTimeUnitToSecs(nmaxTime, tUnit)
+    
+    classNewdata <- class(newdata)
+    coerceNewdataToIrregular <- !(classNewdata %in% c("STI", "STIDF"))
+    newDataHasData <- "data" %in% slotNames(newdata)
+    
+    coerceDataToIrregular <- !(class(data) %in% c("STI", "STIDF"))
+    
+    res <- NULL
+    
+    # loop over all times in newdata
+    if (progress)
+      pb <- txtProgressBar(min = 0, max = length(timeInd), initial = 0, style = 3)
+    
+    for (i in 1:length(timeInd)) {
+      if (progress)
+        setTxtProgressBar(pb, i)
+      
+      time <- timeInd[i]
+      
+      timeBlock <- paste0(time + nmaxTime, collapse = "/")
+      
+      dataBlock <- data[ , timeBlock, drop=FALSE]
+      newdataSlice <- newdata[ , time, drop=FALSE]
+      
+      # check whether timeblock is empty (sparce data, diverging alignment of newdata@time and data@time)
+      if (nrow(dataBlock@data) == 0) {
+        warning(paste("Empty time block around:", time, "Predictions are set to 'NA'. Increase the tmeporal window."))
+        emptVal <- rep(NA, length(newdataSlice@sp))
+        
+        if(computeVar) {
+          res <- rbind(res, data.frame(var1.pred = emptVal, var1.var = emptVal))
+        } else {
+          res <- rbind(res, data.frame(var1.pred = emptVal))
+        }
+        next;
+      }
+      
+      if (nmax < Inf) { # local ST-neighbourhood kriging
+        
+        # krigeST.local expect STI*s
+        if(coerceDataToIrregular)
+          dataBlock <- as(dataBlock, "STIDF")
+
+        if(coerceNewdataToIrregular) {
+          if (newDataHasData) {
+            newdataSlice <- as(newdataSlice, "STIDF")
+          } else {
+            newdataSlice <- as(newdataSlice, "STI")
+          }
+        }
+        
+        res <- rbind(res, 
+                     krigeST.local(formula = formula, 
+                                   data = dataBlock, newdata = newdataSlice, 
+                                   modelList = modelList, beta=beta, # y=y, # for later use
+                                   nmax = nmax, stAni = stAni, bufferNmax = bufferNmax,
+                                   computeVar = computeVar,  progress = FALSE))
+          
+      } else { # full ST kriging
+        res <- rbind(res, 
+                     krigeST.df(formula = formula, data = dataBlock, newdata = newdataSlice, 
+                                modelList = modelList, beta = beta, y = y, 
+                                ..., 
+                                computeVar = computeVar,
+                                progress = FALSE))
+        
+      }  
+    }
+    
+    if (classNewdata %in% c("STI", "STS", "STF")) {
+      res <- addAttrToGeom(newdata, as.data.frame(res))
+      res <- switch(classNewdata, 
+                    STI = as(res, "STIDF"),
+                    STS = as(res, "STSDF"),
+                    STF = as(res, "STFDF"))
+    } else {
+      newdata@data <- cbind(newdata@data, res)
+      res <- as(newdata, classNewdata)
+    }
+  } else { # no time blocks
+    if (nmax < Inf) { # local ST-neighbourhood kriging
+      # krigeST.local expects STI*s
+      if(is(data, "STFDF") || is(data, "STSDF"))
+        data <- as(data, "STIDF")
+      
+      classNewdata <- class(newdata)
+      if(class(newdata) %in% c("STFDF", "STSDF"))
+        newdata <- as(newdata, "STIDF")
+      if(class(newdata) %in% c("STF", "STS"))
+        newdata <- as(newdata, "STI")
+      
+      res <- krigeST.local(formula = formula, data = data, 
+                           newdata = newdata, modelList = modelList, beta=beta, # y=y, # for later use
+                           nmax = nmax, stAni = stAni, 
+                           computeVar = computeVar, fullCovariance = fullCovariance, 
+                           bufferNmax = bufferNmax, progress = progress)
+      
+      if (classNewdata %in% c("STI", "STS", "STF")) {
+        res <- addAttrToGeom(newdata, as.data.frame(res))
+        res <- switch(classNewdata, 
+                      STI = as(res, "STIDF"),
+                      STS = as(res, "STSDF"),
+                      STF = as(res, "STFDF"))
+      } else {
+        newdata@data <- cbind(newdata@data, res)
+        res <- as(newdata, classNewdata)
+      }
+    } else { # full ST kriging
+      res <- krigeST.df(formula = formula, data = data, newdata = newdata, 
+                        modelList = modelList, beta = beta, y = y, 
+                        ..., 
+                        computeVar = computeVar, fullCovariance = fullCovariance,
+                        progress = progress)
+      
+      # wrapping the predictions in ST*DF again
+      if (!fullCovariance) {
+        if (classNewdata %in% c("STI", "STS", "STF")) {
+          res <- addAttrToGeom(newdata, as.data.frame(res))
+        } else {
+          newdata@data <- cbind(newdata@data, res)
+        }
+      } 
+    }
+  }
+  return(res)
 }
+
 
 krigeST.df <- function(formula, data, newdata, modelList, beta, y, ...,
                        nmax = Inf, stAni = NULL,
@@ -158,21 +293,21 @@ krigeST.df <- function(formula, data, newdata, modelList, beta, y, ...,
 krigeST.local <- function(formula, data, newdata, modelList, beta, nmax, stAni=NULL,
                           computeVar=FALSE, fullCovariance=FALSE, 
                           bufferNmax=2, progress=TRUE) {
+  
+  # every data set is assumed to be STI*
+  stopifnot(class(data) == "STIDF")
+  stopifnot(class(newdata) %in% c("STIDF", "STI"))
+  
   dimGeom <- ncol(coordinates(data))
   if (fullCovariance)
-    stop("fullCovariance cannot be returned for local ST kriging")
+    stop("fullCovariance cannot be returned for local ST kriging.")
   
   if(is.null(stAni) & !is.null(modelList$stAni)) {
     stAni <- modelList$stAni
     
     # scale stAni [spatial/temporal] to seconds
-    if(!is.null(attr(modelList,"temporal unit")))
-      stAni <- stAni/switch(attr(modelList, "temporal unit"),
-                            secs=1,
-                            mins=60,
-                            hours=3600,
-                            days=86400,
-                            stop("Temporal unit",attr(modelList, "temporal unit"),"not implemented."))
+    if(!is.null(attr(modelList, "temporal unit")))
+      stAni <- stAni/switchTimeUnitToSecs(1, attr(modelList, "temporal unit"))
   }
   
   if(is.null(stAni))
@@ -183,18 +318,6 @@ krigeST.local <- function(formula, data, newdata, modelList, beta, nmax, stAni=N
   # check whether the model meets the coordinates' unit
   if(!is.null(attr(modelList, "spatial unit")))
     stopifnot((is.projected(data) & (attr(modelList, "spatial unit") %in% c("km","m"))) | (!is.projected(data) & !(attr(modelList, "spatial unit") %in% c("km","m"))))
-  
-  if(is(data, "STFDF") || is(data, "STSDF"))
-    data <- as(data, "STIDF")
-  
-  clnd <- class(newdata)
-  
-  if(is(newdata, "STFDF") || is(newdata, "STSDF"))
-    newdata <- as(newdata, "STIDF")
-  if(is(newdata, "STF") || is(newdata, "STS"))
-    newdata <- as(newdata, "STI")
-  
-  # from here on every data set is assumed to be STI*
   
   if(dimGeom == 2) {
     df = as(data, "data.frame")[,c(1,2,4)]
@@ -239,20 +362,11 @@ krigeST.local <- function(formula, data, newdata, modelList, beta, nmax, stAni=N
     if(progress)
       setTxtProgressBar(pb, i)  
   }
+
   if(progress)
     close(pb)
-  
-  if (clnd %in% c("STI", "STS", "STF")) {
-    newdata <- addAttrToGeom(newdata, as.data.frame(res))
-    newdata <- switch(clnd, 
-                      STI = as(newdata, "STIDF"),
-                      STS = as(newdata, "STSDF"),
-                      STF = as(newdata, "STFDF"))
-  } else {
-    newdata@data <- cbind(newdata@data, res)
-    newdata <- as(newdata, clnd)
-  }
-  newdata
+
+  return(res)
 }
 
 ## Area to point kriging
@@ -417,7 +531,7 @@ krigeSTTg.local <- function(formula, data, newdata, modelList, y, nmax=Inf, stAn
   if(is(data, "STFDF") || is(data, "STSDF"))
     data <- as(data, "STIDF")
   
-  clnd <- class(newdata)
+  classNewdata <- class(newdata)
   
   if(is(newdata, "STFDF") || is(newdata, "STSDF"))
     newdata <- as(newdata, "STIDF")
@@ -469,15 +583,29 @@ krigeSTTg.local <- function(formula, data, newdata, modelList, y, nmax=Inf, stAn
   if(progress)
     close(pb)
   
-  if (clnd %in% c("STI", "STS", "STF")) {
+  if (classNewdata %in% c("STI", "STS", "STF")) {
     newdata <- addAttrToGeom(newdata, as.data.frame(res))
-    newdata <- switch(clnd, 
+    newdata <- switch(classNewdata, 
                       STI = as(newdata, "STIDF"),
                       STS = as(newdata, "STSDF"),
                       STF = as(newdata, "STFDF"))
   } else {
     newdata@data <- cbind(newdata@data, res)
-    newdata <- as(newdata, clnd)
+    newdata <- as(newdata, classNewdata)
   }
   newdata
+}
+
+## HELPER ##
+switchTimeUnitToSecs <- function(time, tUnit) {
+  time * switch(tUnit,
+                secs=1,
+                mins=60,
+                hours=3600,
+                days=86400,
+                stop("Temporal unit",attr(modelList, "temporal unit"),"not implemented."))
+}
+
+nextTxtProgressBar <- function(pb) {
+  setTxtProgressBar(pb, getTxtProgressBar(pb)+1)  
 }

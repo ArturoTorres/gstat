@@ -12,9 +12,9 @@ Function for ordinary global and local and trans Gaussian spatio-temporal krigin
 }
 \usage{
 krigeST(formula, data, newdata, modelList, beta, y, ...,
-        nmax = Inf, stAni = NULL,
-        computeVar = FALSE,	fullCovariance = FALSE,
-        bufferNmax=2, progress=TRUE)
+                    nmax=Inf, nmaxTime=Inf, stAni=NULL, bufferNmax=2,
+                    computeVar = FALSE, fullCovariance = FALSE,
+                    progress=TRUE)
 krigeSTTg(formula, data, newdata, modelList, y, nmax=Inf, stAni=NULL,
                       bufferNmax=2, progress=TRUE, lambda = 0)
 }
@@ -42,18 +42,19 @@ krigeSTTg(formula, data, newdata, modelList, y, nmax=Inf, stAni=NULL,
   \code{\link{variogramSurface}} for details on how to define spatio-temporal 
   covariance models. \code{krigeST} will look for a "temporal unit" attribute
   in the provided modelList in order to adjust the temporal scales.}
+ \item{beta}{The (known) mean for simple kriging.}
  \item{y}{matrix; to krige multiple fields in a single step, pass data 
   as columns of matrix \code{y}. This will ignore the value of the 
   response in \code{formula}.}
- \item{beta}{The (known) mean for simple kriging.}
+ \item{\dots}{further arguments used for instance to pass the model into vgmAreaST for area-to-point kriging}
  \item{nmax}{The maximum number of neighbouring locations for a spatio-temporal local neighbourhood}
+ \item{nmaxTime}{The maximum temporal distnace to consider in a temporal window kriging (in the same unit as the model variogram). A single number will be used back- and forward in time, but a two-place vector can be used to specify an asymmetric window \code{c(-backward, forward)}.}
  \item{stAni}{a spatio-temporal anisotropy scaling assuming a metric spatio-temporal space. Used only for the selection of the closest neighbours. This scaling needs only to be provided in case the model does not have a stAni parameter, or if a different one should be used for the neighbourhood selection. Mind the correct spatial unit. Currently, no coordinate conversion is made for the neighbourhood selection (i.e. Lat and Lon require a spatio-temporal anisotropy scaling in degrees per second).}
- \item{\dots}{ further arguments used for instance to pass the model into vgmAreaST for area-to-point kriging}
- \item{computeVar}{logical; if TRUE, prediction variances will be returned}
- \item{fullCovariance}{logical; if FALSE a vector with prediction 
+  \item{bufferNmax}{factor with which nmax is multiplied for an extended search radius (default=2). Set to 1 for no extension of the search radius.}
+  \item{computeVar}{logical; if TRUE, prediction variances will be returned}
+  \item{fullCovariance}{logical; if FALSE a vector with prediction 
   variances will be returned, if TRUE the full covariance matrix of 
   all predictions will be returned}
-  \item{bufferNmax}{factor with which nmax is multiplied for an extended search radius (default=2). Set to 1 for no extension of the search radius.}
   \item{progress}{whether a progress bar shall be printed for local spatio-temporal kriging; default=TRUE}
   \item{lambda}{The value of lambda used in the box-cox transformation.}
 }

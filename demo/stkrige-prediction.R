@@ -67,9 +67,11 @@ if(animate) {
 DE_pred <- STF(gridDE, DE_RB_2005@time[smplDays])
 tIDS <- unique(pmax(1,pmin(as.numeric(outer(-5:5, smplDays, "+")), 365)))
 
-sepPred <- krigeST(PM10~1, data=DE_RB_2005[,tIDS], 
-                   newdata=DE_pred, fitSepModel, nmax=50,
+debugonce(krigeST)
+sepPredTW <- krigeST(PM10~1, data=DE_RB_2005[,tIDS], 
+                   newdata=DE_pred, fitSepModel, nmax=Inf, nmaxTime=c(-2,2),
                    stAni=fitMetricModel$stAni/24/3600)
+
 psPred <- krigeST(PM10~1, data=DE_RB_2005[,tIDS], 
                   newdata=DE_pred, fitProdSumModel, nmax=50,
                   stAni=fitMetricModel$stAni/24/3600)
@@ -79,7 +81,7 @@ metPred <- krigeST(PM10~1, data=DE_RB_2005[,tIDS],
 sumPred <- krigeST(PM10~1, data=DE_RB_2005[,tIDS], 
                    newdata=DE_pred, fitSumMetricModel, nmax=50,
                    stAni=fitMetricModel$stAni/24/3600)
-smplSumPred <- krigeST(PM10~1, data=DE_RB_2005[,tIDS], # start: 12:24
+smplSumPred <- krigeST(PM10~1, data=DE_RB_2005[,tIDS],
                        newdata=DE_pred,  fitSimpleSumMetricModel, nmax=50,
                        stAni=fitMetricModel$stAni/24/3600)
 

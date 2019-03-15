@@ -315,7 +315,7 @@ krigeSTSimTB <- function(formula, data, newdata, modelList, nsim,
   
   ## conditioning
   # interpolate the observations to the simulation grid
-  obsMeanField <- krigeST(formula=formula, data=data, newdata=newdata, modelList=modelList)
+  obsMeanField <- krigeST(formula=formula, data=data, newdata=newdata, modelList=modelList, nmax=nmax)
   
   # interpolate to observation locations from the simulated grids for each simulation
   simMeanObsLoc <- krigeSTMultiple(as.formula(paste0("var1.pred ~", formula[[3]])),
