@@ -1,69 +1,3 @@
-# 
-# library(gstat)
-# # separable model: spatial and temporal sill will be ignored
-# # and kept constant at 1-nugget respectively. A joint sill is used.
-# separableModel <- vgmST("separable", 
-#                         space=vgm(0.9,"Exp", 147, 0.1),
-#                         time =vgm(0.9,"Exp", 3.5, 0.1),
-#                         sill=40)
-# 
-# covSTMat <- ceWrapSpaceTimeOnTorusCalcCovRow1(c(250,20), c(1,16), separableModel)
-# dim(covSTMat)
-# 
-# image(matrix(ceSim(covSTMat, 1, c(20, 16)),
-#              nrow=20, ncol=16), asp=1, ylab="time", xlab="space")
-# 
-# # product sum model: spatial and temporal nugget will be ignored and kept
-# # constant at 0. Only a joint nugget is used.
-# prodSumModel <- vgmST("productSum",
-#                       space=vgm(39, "Sph", 343, 0),
-#                       time= vgm(36, "Exp",   3, 0), 
-#                       k=15)
-# 
-# covSTMat <- ceWrapSpaceTimeOnTorusCalcCovRow1(c(250,20), c(1,16), prodSumModel)
-# dim(covSTMat)
-# 
-# image(matrix(ceSim(covSTMat, 1, c(20, 16)),
-#              nrow=20, ncol=16), asp=1, ylab="time", xlab="space")
-# 
-# # sum metric model: spatial, temporal and joint nugget will be estimated
-# sumMetricModel <- vgmST("sumMetric",
-#                         space=vgm( 6.9, "Lin", 200, 3.0),
-#                         time =vgm(10.3, "Lin",  15, 3.6),
-#                         joint=vgm(37.2, "Exp",  84,11.7),
-#                         stAni=77.7)
-# 
-# covSTMat <- ceWrapSpaceTimeOnTorusCalcCovRow1(c(250,20), c(1,16), sumMetricModel)
-# dim(covSTMat)
-# 
-# image(matrix(ceSim(covSTMat, 1, c(20, 16)),
-#              nrow=20, ncol=16), asp=1, ylab="time", xlab="space")
-# 
-# # simplified sumMetric model, only a overall nugget is fitted. The spatial, 
-# # temporal and jont nuggets are set to 0.
-# simpleSumMetricModel <- vgmST("simpleSumMetric",
-#                               space=vgm(20,"Lin", 150, 0),
-#                               time =vgm(20,"Lin", 10,  0),
-#                               joint=vgm(20,"Exp", 150, 0),
-#                               nugget=1, stAni=15)
-# 
-# covSTMat <- ceWrapSpaceTimeOnTorusCalcCovRow1(c(250,20), c(1,16), simpleSumMetricModel)
-# dim(covSTMat)
-# 
-# image(matrix(ceSim(covSTMat, 1, c(20, 16)),
-#              nrow=20, ncol=16), asp=1, ylab="time", xlab="space")
-# 
-# # metric model
-# metricModel <- vgmST("metric",
-#                      joint=vgm(60, "Exp", 150, 10),
-#                      stAni=60)
-# 
-# covSTMat <- ceWrapSpaceTimeOnTorusCalcCovRow1(c(250,20), c(1,16), metricModel, turningLayers = FALSE)
-# dim(covSTMat)
-# 
-# image(matrix(ceSim(covSTMat, 1, c(20, 16)),
-#              nrow=20, ncol=16), asp=1, ylab="time", xlab="space")
-
 ## turning bands:
 # for cov-functions valid in 3-dim 
 
@@ -106,50 +40,6 @@ randomDirections <- function(n) {
 # library(rgl)
 # plot3d(randomDirections(100), aspect = c(1,1,0.5))
 
-
-# nLyrs <- 500
-# coordMat <- matrix(c(1,5,5,
-#                      1,7,7,
-#                      1,5,7,
-#                      1,7,5), byrow=T, ncol=3)
-# 
-# coordMat <- matrix(runif(3*1001,1,5), byrow=T, ncol=3)
-# 
-# # random directions in 3D
-# rndDir <- randomDirections(nLyrs)
-# 
-# # how much does each direction contribute to the point
-# cntrbtn <- rndDir %*% t(coordMat)
-# # -> each column corresponds to one location, each row i to the "contribution" of the i-th rndDir
-# 
-# cl_cntrbtn <- ceiling(cntrbtn)+10 # centre for grid; mind spatial index
-# fl_cntrbtn <- floor(cntrbtn) +10
-# 
-# covRow1 <- ceWrapSpaceTimeOnTorusCalcCovRow1(c(250,20), c(1,16), metricModel, turningLayers = TRUE)
-# 
-# sTime <- Sys.time()
-# simLyrs <- ceSim(covRow1, nLyrs, c(20,16))
-# simLyrs <- lapply(1:nLyrs, function(col) matrix(simLyrs[,col], nrow=20, ncol=16))
-# 
-# lambda <- cl_cntrbtn - cntrbtn -10
-# 
-# cntrbSngSimLyr <- function(lyrId) {
-#   simLyrs[[lyrId]][cl_cntrbtn[lyrId,],] * (1-lambda)[lyrId,] + simLyrs[[lyrId]][fl_cntrbtn[lyrId,],] * lambda[lyrId,]
-# }
-# 
-# # reduce to the one realisation based on the combination of nLyrs turning bands
-# simTs <- Reduce('+', lapply(1:nLyrs, cntrbSngSimLyr))/sqrt(nLyrs)
-# eTime <- Sys.time()
-# 
-# eTime - sTime # 0.7 secs/simulation of 100 random points
-# 
-# image(simTs)
-# 
-# dim(simTs)
-# # 1001 locations at 16 time stamps
-# 
-# plot(simTs[500,])
-
 # computes the covariance matrixes and weights once, applied to series of
 # variables/simulations where each variable/simulation is stored in one column of
 # the multiVarMatrix copied from krigeST to avoid repeted calls to krige with
@@ -158,9 +48,22 @@ randomDirections <- function(n) {
 # TODO: add functionality for temporal sandwich-wise processing: i.e. use the 
 # +/- nmaxTime time slices to predict one time slice
 
-krigeSTMultiple <- function(formula, from, to, modelList, multiVarMatrix, nmaxTime=Inf) {
-  lst = extractFormula(formula, from, to)
+krigeSTMultiple <- function(formula, from, to, modelList, multiVarMatrix, nmax=Inf, nmaxTime=Inf) {
+  if (any(c(nmax, nmaxTime) < Inf)) {
+    krigeSTMultiple.local(formula = formula, from = from, to = to, 
+                          modelList = modelList, 
+                          multiVarMatrix = multiVarMatrix, 
+                          nmax = nmax, nmaxTime = nmaxTime)
+  } else {
+    krigeSTMultiple.global(formula = formula, from = from, to = to, 
+                           modelList = modelList, 
+                           multiVarMatrix = multiVarMatrix)
+  }
+}
 
+krigeSTMultiple.global <- function(formula, from, to, modelList, multiVarMatrix) {
+  lst = extractFormula(formula, from, to)
+  
   separate <- length(from) > 1 && length(to) > 1 &&
     inherits(from, "STF") && inherits(to, "STF")
   
@@ -174,7 +77,7 @@ krigeSTMultiple <- function(formula, from, to, modelList, multiVarMatrix, nmaxTi
     skwts <- STsolve(V, v0, X) # use Kronecker trick
   else 
     skwts <- CHsolve(V, cbind(v0, X))
-
+  
   npts = length(to)
   ViX = skwts[,-(1:npts)]
   skwts = skwts[,1:npts]
@@ -188,17 +91,151 @@ krigeSTMultiple <- function(formula, from, to, modelList, multiVarMatrix, nmaxTi
   apply(multiVarMatrix, 2, idPredFun)
 }
 
-
-
-# unconcitional
-## STFDF
-# library(sp)
-# library(spacetime)
-# library(zoo)
-# library(xts)
-# data(meuse, package = "sp")
-# coordinates(meuse) <- ~x+y
-# proj4string(meuse) <- CRS("+init=epsg:28992")
+krigeSTMultiple.local <- function(formula, from, to, modelList, multiVarMatrix, nmax, nmaxTime) {
+ 
+  
+  timeInd <- index(newdata@time)
+  nmaxTime <- switchTimeUnitToSecs(nmaxTime, tUnit)
+  
+  classNewdata <- class(newdata)
+  coerceNewdataToIrregular <- !(classNewdata %in% c("STI", "STIDF"))
+  newDataHasData <- "data" %in% slotNames(newdata)
+  
+  coerceDataToIrregular <- !(class(data) %in% c("STI", "STIDF"))
+  
+  res <- NULL
+  
+  # loop over all times in newdata
+  if (progress)
+    pb <- txtProgressBar(min = 0, max = length(timeInd), initial = 0, style = 3)
+  
+  for (i in 1:length(timeInd)) {
+    if (progress)
+      setTxtProgressBar(pb, i)
+    
+    time <- timeInd[i]
+    
+    timeBlock <- paste0(time + nmaxTime, collapse = "/")
+    
+    dataBlock <- data[ , timeBlock, drop=FALSE]
+    newdataSlice <- newdata[ , time, drop=FALSE]
+    
+    # check whether timeblock is empty (sparce data, diverging alignment of newdata@time and data@time)
+    if (nrow(dataBlock@data) == 0) {
+      warning(paste("Empty time block around:", time, "Predictions are set to 'NA'. Increase the tmeporal window."))
+      emptVal <- rep(NA, length(newdataSlice@sp))
+      
+      if(computeVar) {
+        res <- rbind(res, data.frame(var1.pred = emptVal, var1.var = emptVal))
+      } else {
+        res <- rbind(res, data.frame(var1.pred = emptVal))
+      }
+      next;
+    }
+    
+    if (nmax < Inf) { # local ST-neighbourhood kriging
+      
+      # krigeST.local expect STI*s
+      if(coerceDataToIrregular)
+        dataBlock <- as(dataBlock, "STIDF")
+      
+      if(coerceNewdataToIrregular) {
+        if (newDataHasData) {
+          newdataSlice <- as(newdataSlice, "STIDF")
+        } else {
+          newdataSlice <- as(newdataSlice, "STI")
+        }
+      }
+      
+      res <- rbind(res, 
+                   krigeST.local(formula = formula, 
+                                 data = dataBlock, newdata = newdataSlice, 
+                                 modelList = modelList, beta=beta, # y=y, # for later use
+                                 nmax = nmax, stAni = stAni, bufferNmax = bufferNmax,
+                                 computeVar = computeVar,  progress = FALSE))
+      
+    } else { # full ST kriging
+      res <- rbind(res, 
+                   krigeST.df(formula = formula, data = dataBlock, newdata = newdataSlice, 
+                              modelList = modelList, beta = beta, y = y, 
+                              ..., 
+                              computeVar = computeVar,
+                              progress = FALSE))
+      
+    }  
+  }
+  
+  if (classNewdata %in% c("STI", "STS", "STF")) {
+    res <- addAttrToGeom(newdata, as.data.frame(res))
+    res <- switch(classNewdata, 
+                  STI = as(res, "STIDF"),
+                  STS = as(res, "STSDF"),
+                  STF = as(res, "STFDF"))
+  } else {
+    newdata@data <- cbind(newdata@data, res)
+    res <- as(newdata, classNewdata)
+  }
+  
+  if (nmax < Inf) { # local ST-neighbourhood kriging
+    # krigeST.local expects STI*s
+    if(is(data, "STFDF") || is(data, "STSDF"))
+      data <- as(data, "STIDF")
+    
+    classNewdata <- class(newdata)
+    if(class(newdata) %in% c("STFDF", "STSDF"))
+      newdata <- as(newdata, "STIDF")
+    if(class(newdata) %in% c("STF", "STS"))
+      newdata <- as(newdata, "STI")
+    
+    res <- krigeST.local(formula = formula, data = data, 
+                         newdata = newdata, modelList = modelList, beta=beta, # y=y, # for later use
+                         nmax = nmax, stAni = stAni, 
+                         computeVar = computeVar, fullCovariance = fullCovariance, 
+                         bufferNmax = bufferNmax, progress = progress)
+    
+    if (classNewdata %in% c("STI", "STS", "STF")) {
+      res <- addAttrToGeom(newdata, as.data.frame(res))
+      res <- switch(classNewdata, 
+                    STI = as(res, "STIDF"),
+                    STS = as(res, "STSDF"),
+                    STF = as(res, "STFDF"))
+    } else {
+      newdata@data <- cbind(newdata@data, res)
+      res <- as(newdata, classNewdata)
+    }
+    
+  #######
+  
+  ###########
+  
+  lst = extractFormula(formula, from, to)
+  
+  separate <- length(from) > 1 && length(to) > 1 &&
+    inherits(from, "STF") && inherits(to, "STF")
+  
+  X = lst$X
+  x0 = lst$x0
+  
+  V = covfn.ST(from, model = modelList, separate=separate)
+  v0 = covfn.ST(from, to, modelList)
+  
+  if (modelList$stModel == "separable" & separate)
+    skwts <- STsolve(V, v0, X) # use Kronecker trick
+  else 
+    skwts <- CHsolve(V, cbind(v0, X))
+  
+  npts = length(to)
+  ViX = skwts[,-(1:npts)]
+  skwts = skwts[,1:npts]
+  
+  idPredFun <- function(sim) {
+    sim <- matrix(sim, ncol = 1)
+    beta = solve(t(X) %*% ViX, t(ViX) %*% sim)
+    x0 %*% beta + t(skwts) %*% (sim - X %*% beta)
+  }
+  
+  apply(multiVarMatrix, 2, idPredFun)
+}
 
 # krigeST <- function(formula, data, newdata, modelList, y, beta, nmax=Inf, stAni=NULL,
 #                     computeVar = FALSE, fullCovariance = FALSE,
@@ -207,7 +244,7 @@ krigeSTMultiple <- function(formula, from, to, modelList, multiVarMatrix, nmaxTi
 ## 
 krigeSTSimTB <- function(formula, data, newdata, modelList, nsim, 
                             progress=TRUE, nLyrs=500, tGrid=NULL, sGrid=NULL, ceExt=2,
-                            nmax=Inf) {
+                            nmax=Inf, nmaxTime=Inf) {
   stopifnot(zoo::is.regular(newdata@time))
   
   condSim <- TRUE
@@ -225,14 +262,16 @@ krigeSTSimTB <- function(formula, data, newdata, modelList, nsim,
     tDis <- diff(c(index(newdata@time[1]), newdata@endTime[1]))
     if (!is.null(attr(modelList, "temporal unit"))) {
       units(tDis) <- attr(modelList, "temporal unit")
+      attr(modelList, "temporal unit") <- units(tDis)
     } else {
-      message("[The spatio-temporal variogram model does not carry a time unit attribute: krigeST cannot check whether the temporal distance metrics coincide.]")
+      warning("The spatio-temporal variogram model does not carry the strongly recommended attribute 'temporal unit'.\n The unit '", units(tDis),
+              "' has been assumed. krigeST could not check whether the temporal distances between locations and in the variogram coincide.")
     }
     
     tGrid <- c(as.numeric(tDis), length(newdata@time))
     attr(tGrid, "units") <- c("", units(tDis))
     
-    message("[Using the following time unit: ", units(tDis), "]")
+    message("Using the following time unit: ", units(tDis))
   }
   
   if (is.null(sGrid)) {
@@ -309,21 +348,31 @@ krigeSTSimTB <- function(formula, data, newdata, modelList, nsim,
       newdata <- addAttrToGeom(newdata, as.data.frame(sims))
     return(newdata)
   }
+  # function call ends above if no data has been provided -> unconditional case
   
-  # function call ends here if no data has been provided -> unconditional case
+  ## conditional case:
   varName <- all.vars(formula[[2]])
   
   ## conditioning
   # interpolate the observations to the simulation grid
-  obsMeanField <- krigeST(formula=formula, data=data, newdata=newdata, modelList=modelList, nmax=nmax)
+  obsMeanField <- krigeST(formula = formula, 
+                          data = data, newdata = newdata,
+                          modelList = modelList,
+                          nmax = nmax, nmaxTime = nmaxTime)
   
   # interpolate to observation locations from the simulated grids for each simulation
   simMeanObsLoc <- krigeSTMultiple(as.formula(paste0("var1.pred ~", formula[[3]])),
-                                   obsMeanField, data, modelList, sims)
+                                   obsMeanField, data, 
+                                   modelList = modelList, 
+                                   multiVarMatrix = sims,
+                                   nmax = nmax, nmaxTime = nmaxTime)
   
   # interpolate from kriged mean sim at observed locations back to the grid for mean surface of the simulations
-  simMeanFields <- krigeSTMultiple(as.formula(paste0(varName, "~", formula[[3]])),
-                                 data, newdata, modelList, simMeanObsLoc)
+  simMeanFields <- krigeSTMultiple(as.formula(paste0(varName, "~", formula[[3]])), 
+                                 data, newdata, 
+                                 modelList = modelList,
+                                 multiVarMatrix =  simMeanObsLoc,
+                                 nmax = nmax, nmaxTime = nmaxTime)
   
   # add up the mean field and the corrected data
   sims <- obsMeanField@data$var1.pred + sims - simMeanFields
