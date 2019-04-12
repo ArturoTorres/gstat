@@ -86,12 +86,12 @@ ceSim <- function(covMatRow1, n=1, cells.dim, grid.index) {
   d <- dim(covMatRow1)
   dp <- prod(d)
   sdp <- sqrt(dp)
-  prefix <- sqrt(Re(fft(covMatRow1, TRUE)))
+  prefix <- sqrt(fft(covMatRow1, TRUE)) # Re(...)
   
   simFun <- function(x) {
     std <- rnorm(dp)
     realz <- prefix * (fft(matrix(std, d[1], d[2]))/sdp)
-    as.numeric(Re(fft(realz, TRUE)/sdp)[1:cells.dim[1], 1:cells.dim[2]])
+    as.numeric(Re(fft(realz, TRUE)/sdp)[1:cells.dim[1], 1:cells.dim[2]]) # use also Im() for two realisations in one
   }
   
   simFunGridIndex <- function(x) {
