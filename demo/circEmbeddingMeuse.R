@@ -67,7 +67,7 @@ stplot(krigedSim[1:21,,"sim5"], mode="ts", main="unconditional siumulation")
 stplot(krigedSim[1:21,,"sim6"], mode="ts", main="unconditional siumulation")
 
 # plot the ten simulations of the first day
-spplot(krigedSim[,1], paste0("sim",1:10), as.table=TRUE, main="unconditional siumulation")
+spplot(krigedSim[,1], paste0("sim",1:10), as.table=TRUE, main="unconditional siumulation of the first day")
 
 #################
 ## conditional ##
@@ -79,10 +79,10 @@ krigedSim <- krigeSTSimTB(formula= zinc ~ 1, data = STFDF(geometry(meuse), stf@t
 Sys.time() - sTime
 
 # plot one simulation along time
-stplot(krigedSim[,1:12], main="conditinal simulation")
+stplot(krigedSim[,1:12], main="conditional simulation")
 
 # plot one simulation along time as time series
-stplot(krigedSim[1:12,,"sim1"], mode="ts", main="conditinal simulation")
+stplot(krigedSim[1:12,,"sim1"], mode="ts", main="conditional simulation over time")
 
 # plot the ten simulations of the first day
-spplot(krigedSim[,1], paste0("sim",1:10), as.table=TRUE, main="conditinal simulation")
+spplot(krigedSim[,1], paste0("sim",1:10), as.table=TRUE, main="conditional simulations of the first day")
