@@ -1,6 +1,11 @@
 gstat
 =====
-[![Build Status](https://travis-ci.org/BenGraeler/gstat.svg?branch=master)](https://travis-ci.org/BenGraeler/gstat)
+[![Build Status](https://travis-ci.org/r-spatial/gstat.svg?branch=master)](https://travis-ci.org/r-spatial/gstat)
+[![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/r-spatial/gstat?branch=master&svg=true)](https://ci.appveyor.com/project/edzerpebesma/gstat)
+[![License](http://img.shields.io/badge/license-GPL%20%28%3E=%202%29-brightgreen.svg?style=flat)](http://www.gnu.org/licenses/gpl-2.0.html)
+[![CRAN](http://www.r-pkg.org/badges/version/gstat)](https://cran.r-project.org/package=gstat)
+[![cran checks](https://cranchecks.info/badges/worst/gstat)](https://cran.r-project.org/web/checks/check_results_gstat.html)
+[![Downloads](http://cranlogs.r-pkg.org/badges/gstat?color=brightgreen)](http://www.r-pkg.org/pkg/gstat)
 
 Spatial and spatio-temporal geostatistical modelling, prediction and simulation.
 
@@ -16,4 +21,4 @@ a program for geostatistical modelling, prediction
 and simulation. Computers & Geosciences 24 (1),
 [17–31](http://www.sciencedirect.com/science/article/pii/S0098300497000824).
 
-describes material that is now archived in branch [attic](https://github.com/edzer/gstat/tree/attic)
+describes material that is now archived in branch [attic](https://github.com/r-spatial/gstat/tree/attic)
