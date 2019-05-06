@@ -22,7 +22,7 @@ grd = as(SpatialGrid(GridTopology(c(0.025,0.025), c(.05, .05), c(20,20))), "Spat
 tgrd = seq(min(t)+10000, max(t)-10000, length.out = 20)
 stf = STF(grd, tgrd)
 
-plot(index(stidf@time),1:n)
+plot(index(stidf@time),1:n, main="sampled locations vs prediction steps")
 abline(v=as.numeric(index(stf@time)), col="red")
 
 # define a variogram model
@@ -46,16 +46,28 @@ wireframe(gamma ~ spacelag+timelag,
           main="imposed sum-metric model")
 
 # space-time local kriging
+time <- Sys.time()
 locSpaceTimeKrig <- krigeST(z~1, stidf, stf, sumMetricModel, nmax=10)
+time <- Sys.time() - time
+
 stplot(locSpaceTimeKrig[,1:12], 
+       main=paste("space-time local kriging", round(time,2), units(time)),
        col.regions=bpy.colors(), scales=list(draw=T))
 
 # time slice wise local kriging
+time <- Sys.time()
 locTimeSliceKrig <- krigeST(z~1, stidf, stf, sumMetricModel, nmaxTime=c(-12,12)*3600)
+time <- Sys.time() - time
+
 stplot(locTimeSliceKrig[,1:12], 
+       main=paste("time slice wise local kriging", round(time,2), units(time)),
        col.regions=bpy.colors(), scales=list(draw=T))
 
 # time slice wise space-time local kriging
+time <- Sys.time()
 locTimeSliceSpaceTimeKrig <- krigeST(z~1, stidf, stf, sumMetricModel, nmaxTime=c(-12,12)*3600, nmax = 20)
+time <- Sys.time() - time
+
 stplot(locTimeSliceSpaceTimeKrig[,1:12], 
+       main=paste("time slice wise space-time local kriging", round(time,2), units(time)),
        col.regions=bpy.colors(), scales=list(draw=T))
