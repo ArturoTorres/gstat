@@ -51,22 +51,23 @@ krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
                     progress=TRUE) {
   
   stopifnot(inherits(modelList, "StVariogramModel") || is.function(modelList))
+  
   return_stars = if (inherits(data, "stars")) {
-	if (!requireNamespace("sf", quietly = TRUE))
-		stop("sf required: install that first") # nocov
-	if (!requireNamespace("stars", quietly = TRUE))
-		stop("stars required: install that first") # nocov
-  	data = as(data, "STFDF")
-	newdata = as(newdata, "STFDF")
-	TRUE
+    if (!requireNamespace("sf", quietly = TRUE))
+      stop("sf required: install that first") # nocov
+    if (!requireNamespace("stars", quietly = TRUE))
+      stop("stars required: install that first") # nocov
+    data = as(data, "STFDF")
+    newdata = as(newdata, "STFDF")
+    TRUE
   } else
     FALSE
+  
   stopifnot(inherits(data, c("STF", "STS", "STI")) & inherits(newdata, c("STF", "STS", "STI"))) 
   stopifnot(identical(proj4string(data@sp), proj4string(newdata@sp)))
   stopifnot(class(data@time) == class(newdata@time))
   stopifnot(nmax > 0)
   
-# <<<<<<< HEAD
   tUnitModel <- attr(modelList, "temporal unit")
   tUnitData <- units(abs(outer(index(data@time[1]), index(newdata@time[1]), "-")))
   
@@ -79,7 +80,7 @@ krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
     tUnit <- tUnitModel
     message("Using the following time unit: ", tUnit)
   }
-
+  
   if (fullCovariance & any(c(nmax, nmaxTime) < Inf)) {
     fullCovariance <- FALSE
     warning("\"fullCovariance\" will be ignored for any local kriging variant.")
@@ -140,7 +141,7 @@ krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
         # krigeST.local expect STI*s
         if(coerceDataToIrregular)
           dataBlock <- as(dataBlock, "STIDF")
-
+        
         if(coerceNewdataToIrregular) {
           if (newDataHasData) {
             newdataSlice <- as(newdataSlice, "STIDF")
@@ -155,7 +156,7 @@ krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
                                    modelList = modelList, beta=beta, # y=y, # for later use
                                    nmax = nmax, stAni = stAni, bufferNmax = bufferNmax,
                                    computeVar = computeVar,  progress = FALSE))
-          
+        
       } else { # full ST kriging
         res <- rbind(res, 
                      krigeST.df(formula = formula, data = dataBlock, newdata = newdataSlice, 
@@ -189,7 +190,7 @@ krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
         newdata <- as(newdata, "STI")
       
       res <- krigeST.local(formula = formula, data = data, 
-                           newdata = newdata, modelList = modelList, beta=beta, # y=y, # for later use
+                           newdata = newdata, modelList = modelList, beta=beta, 
                            nmax = nmax, stAni = stAni, 
                            computeVar = computeVar, fullCovariance = fullCovariance, 
                            bufferNmax = bufferNmax, progress = progress)
@@ -222,73 +223,6 @@ krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
     }
   }
   return(res)
-
-  # ||||||| merged common ancestors
-  # if(!is.function(modelList) && is.null(attr(modelList,"temporal unit")))
-  #   warning("The spatio-temporal variogram model does not carry a time unit attribute: krigeST cannot check whether the temporal distance metrics coincide.")
-  # 
-  # if(nmax < Inf) # local neighbourhood ST kriging:
-  #   return(krigeST.local(formula = formula, data = data, 
-  #                        newdata = newdata, modelList = modelList, beta=beta, # y=y, # for later use
-  #                        nmax = nmax, stAni = stAni, 
-  #                        computeVar = computeVar, fullCovariance = fullCovariance, 
-  #                        bufferNmax = bufferNmax, progress = progress))
-  # 
-  # df <- krigeST.df(formula = formula, data = data, newdata = newdata, 
-  #                  modelList = modelList, beta = beta, y = y, 
-  #                  ..., 
-  #                  nmax=nmax, stAni=stAni,
-  #                  computeVar = computeVar, fullCovariance = fullCovariance,
-  #                  bufferNmax = bufferNmax, progress = progress)
-  # 
-  # # wrapping the predictions in ST*DF again
-  # if (!fullCovariance)
-  #   addAttrToGeom(geometry(newdata), df)
-  # else
-  #   df
-# =======
-#   tUnitModel <- attr(modelList, "temporal unit")
-#   tUnitData <- units(abs(outer(index(data@time[1]), index(newdata@time[1]), "-")))
-#   
-#   if (is.null(tUnitModel)) {
-#     warning("The spatio-temporal variogram model does not carry the strongly recommended attribute 'temporal unit'.\n The unit '", tUnitData,
-#             "' has been assumed. krigeST could not check whether the temporal distances between locations and in the variogram coincide.")
-#     tUnit <- tUnitData
-#     attr(modelList, "temporal unit") <- tUnit
-#   } else {
-#     tUnit <- tUnitModel
-#     message("Using the following time unit: ", tUnit)
-#   }
-#   
-#   if(nmax < Inf) { # local neighbourhood ST kriging:
-#     ret = krigeST.local(formula = formula, data = data, 
-#                          newdata = newdata, modelList = modelList, beta=beta, # y=y, # for later use
-#                          nmax = nmax, stAni = stAni, 
-#                          computeVar = computeVar, fullCovariance = fullCovariance, 
-#                          bufferNmax = bufferNmax, progress = progress)
-#     if (return_stars) # xxx
-# 		return(stars::st_as_stars(as(ret, "STFDF")))
-# 	else
-# 		return(ret)
-#   }
-#   
-#   df <- krigeST.df(formula = formula, data = data, newdata = newdata, 
-#                    modelList = modelList, beta = beta, y = y, 
-#                    ..., 
-#                    nmax=nmax, stAni=stAni,
-#                    computeVar = computeVar, fullCovariance = fullCovariance,
-#                    bufferNmax = bufferNmax, progress = progress)
-#   
-#   # wrapping the predictions in ST*DF again
-#   if (!fullCovariance) {
-# 	ret = addAttrToGeom(geometry(newdata), df)
-#     if (return_stars)
-# 	  stars::st_as_stars(as(ret, "STFDF"))
-# 	else
-# 	  ret
-#   } else
-#     df
-# >>>>>>> 8e17d8e55632a7adc728464fda83695d4f296f9c
 }
 
 
@@ -308,7 +242,7 @@ krigeST.df <- function(formula, data, newdata, modelList, beta, y, ...,
   if (inherits(modelList, "StVariogramModel")) {
     V = covfn.ST(data, model = modelList, separate=separate)
     v0 = covfn.ST(data, newdata, modelList)
-  
+    
     if (is(data,"STSDF"))
       d0 <- data[data@index[1,1], data@index[1,2], drop = FALSE]
     else
@@ -440,10 +374,10 @@ krigeST.local <- function(formula, data, newdata, modelList, beta, nmax, stAni=N
     if(progress)
       setTxtProgressBar(pb, i)  
   }
-
+  
   if(progress)
     close(pb)
-
+  
   return(res)
 }
 
@@ -476,7 +410,7 @@ vgmAreaST = function(x, y = x, model, ndiscrSpace = 16, verbose = FALSE, covaria
   } else {
     x <- as(x, "STS") 
   }
-
+  
   if ("data" %in% slotNames(y)) {
     y <- as(y, "STSDF") 
   } else {
@@ -529,7 +463,7 @@ vgmAreaST = function(x, y = x, model, ndiscrSpace = 16, verbose = FALSE, covaria
     # none of x and y contain polygons -> no loops, calc covariance
     suppressMessages(V <- covfn.ST(x, y, model))
   }
-
+  
   V
 }
 
