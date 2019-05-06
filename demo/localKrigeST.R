@@ -7,7 +7,7 @@ library(lattice)
 
 # create n space-time points over [0,1] x [0,1] x [Now, Now+some days]
 t0 = Sys.time() # now
-n = 1000
+n = 1e3
 set.seed(13131) # fix outcomes
 x = runif(n)
 y = runif(n)
@@ -17,10 +17,13 @@ stidf = STIDF(SpatialPoints(cbind(x,y)), sort(t), data.frame(z=z))
 
 stplot(stidf, number=21, main="random spatio-temporal noise")
 
-# create a regular 20 x 20 x 10 grid of prediction locations:
+# create a regular 20 x 20 x 20 grid of prediction locations:
 grd = as(SpatialGrid(GridTopology(c(0.025,0.025), c(.05, .05), c(20,20))), "SpatialPixels")
-tgrd = seq(min(t)+10000, max(t)-10000, length.out = 10)
+tgrd = seq(min(t)+10000, max(t)-10000, length.out = 20)
 stf = STF(grd, tgrd)
+
+plot(index(stidf@time),1:n)
+abline(v=as.numeric(index(stf@time)), col="red")
 
 # define a variogram model
 sumMetricModel <- vgmST("sumMetric",
@@ -32,13 +35,27 @@ attr(sumMetricModel, "temporal unit") <- "secs"
 
 dg <- data.frame(spacelag=rep(c(0.001,1:10)/10,6), 
                  timelag=rep(0:5*50e3, each=11))
-wireframe(model~spacelag+timelag,
+
+wireframe(gamma ~ spacelag+timelag,
           variogramSurface(sumMetricModel, dist_grid = dg),
           scales=list(arrows=F),
           drape=T, col.regions=bpy.colors(),
           zlim=c(0,1.2),
+          ylab="time [secs]",
+          xlab="space [1]",
           main="imposed sum-metric model")
 
-locKrig <- krigeST(z~1, stidf, stf, sumMetricModel, nmax=50, computeVar = T)
-stplot(locKrig[,,"var1.pred"], col.regions=bpy.colors(), scales=list(draw=T))
-stplot(locKrig[,,"var1.var"], col.regions=bpy.colors(), scales=list(draw=T))
+# space-time local kriging
+locSpaceTimeKrig <- krigeST(z~1, stidf, stf, sumMetricModel, nmax=10)
+stplot(locSpaceTimeKrig[,1:12], 
+       col.regions=bpy.colors(), scales=list(draw=T))
+
+# time slice wise local kriging
+locTimeSliceKrig <- krigeST(z~1, stidf, stf, sumMetricModel, nmaxTime=c(-12,12)*3600)
+stplot(locTimeSliceKrig[,1:12], 
+       col.regions=bpy.colors(), scales=list(draw=T))
+
+# time slice wise space-time local kriging
+locTimeSliceSpaceTimeKrig <- krigeST(z~1, stidf, stf, sumMetricModel, nmaxTime=c(-12,12)*3600, nmax = 20)
+stplot(locTimeSliceSpaceTimeKrig[,1:12], 
+       col.regions=bpy.colors(), scales=list(draw=T))
