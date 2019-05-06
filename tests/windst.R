@@ -66,6 +66,7 @@ v = vgmST("separable",
           space = vgm(1, "Exp", 750000), 
           time = vgm(1, "Exp", 1.5 * 3600 * 24),
           sill = 0.6)
+attr(v, "temporal unit") <- "secs"
 wind.ST = krigeST(sqrt(values)~1, w, STF(grd, tgrd), v)
 
 all.equal(wind.pr0, wind.ST)
