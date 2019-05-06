@@ -74,6 +74,8 @@ krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
     warning("\"fullCovariance\" will be ignored for any local kriging variant.")
   }
   
+  classNewdata <- class(newdata)
+  
   # check for time block wise processing
   if (any(nmaxTime < Inf)) { # time block processing
     if (length(nmaxTime) == 1)
@@ -87,7 +89,6 @@ krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
     timeInd <- index(newdata@time)
     nmaxTime <- switchTimeUnitToSecs(nmaxTime, tUnit)
     
-    classNewdata <- class(newdata)
     coerceNewdataToIrregular <- !(classNewdata %in% c("STI", "STIDF"))
     newDataHasData <- "data" %in% slotNames(newdata)
     
@@ -171,10 +172,9 @@ krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
       if(is(data, "STFDF") || is(data, "STSDF"))
         data <- as(data, "STIDF")
       
-      classNewdata <- class(newdata)
-      if(class(newdata) %in% c("STFDF", "STSDF"))
+      if(classNewdata %in% c("STFDF", "STSDF"))
         newdata <- as(newdata, "STIDF")
-      if(class(newdata) %in% c("STF", "STS"))
+      if(classNewdata %in% c("STF", "STS"))
         newdata <- as(newdata, "STI")
       
       res <- krigeST.local(formula = formula, data = data, 
