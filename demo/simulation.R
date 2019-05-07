@@ -50,7 +50,6 @@ stf_grid <- STF(geometry(meuse.grid), stf@time)
 ###################
 ## unconditional ##
 ###################
-
 sTime <- Sys.time()
 krigedSim <- krigeSTSimTB(newdata = stf_grid, modelList = separableModel, nsim = 100, nLyrs = 100)
 Sys.time() - sTime
@@ -59,12 +58,12 @@ Sys.time() - sTime
 stplot(krigedSim[,,"sim1"], main="unconditional siumulation")
 
 # plot one simulation along time as time series
-stplot(krigedSim[1:21,,"sim1"], mode="ts", main="unconditional siumulation")
-stplot(krigedSim[1:21,,"sim2"], mode="ts", main="unconditional siumulation")
-stplot(krigedSim[1:21,,"sim3"], mode="ts", main="unconditional siumulation")
-stplot(krigedSim[1:21,,"sim4"], mode="ts", main="unconditional siumulation")
-stplot(krigedSim[1:21,,"sim5"], mode="ts", main="unconditional siumulation")
-stplot(krigedSim[1:21,,"sim6"], mode="ts", main="unconditional siumulation")
+stplot(krigedSim[1:21,,"sim1"], mode="ts", main="unconditional simulation")
+stplot(krigedSim[1:21,,"sim2"], mode="ts", main="unconditional simulation")
+stplot(krigedSim[1:21,,"sim3"], mode="ts", main="unconditional simulation")
+stplot(krigedSim[1:21,,"sim4"], mode="ts", main="unconditional simulation")
+stplot(krigedSim[1:21,,"sim5"], mode="ts", main="unconditional simulation")
+stplot(krigedSim[1:21,,"sim6"], mode="ts", main="unconditional simulation")
 
 # plot the ten simulations of the first day
 spplot(krigedSim[,1], paste0("sim",1:10), as.table=TRUE, main="unconditional siumulation of the first day")
@@ -75,7 +74,7 @@ spplot(krigedSim[,1], paste0("sim",1:10), as.table=TRUE, main="unconditional siu
 
 sTime <- Sys.time()
 krigedSim <- krigeSTSimTB(formula= zinc ~ 1, data = STFDF(geometry(meuse), stf@time, data.frame(zinc=rep(meuse$zinc, 21))),
-                          newdata = stf_grid[1:500,], modelList = separableModel, nsim = 10, nLyrs = 500)
+                          newdata = stf_grid[1:500,], modelList = separableModel, nsim = 50, nLyrs = 500)
 Sys.time() - sTime
 
 # plot one simulation along time
@@ -86,3 +85,14 @@ stplot(krigedSim[1:12,,"sim1"], mode="ts", main="conditional simulation over tim
 
 # plot the ten simulations of the first day
 spplot(krigedSim[,1], paste0("sim",1:10), as.table=TRUE, main="conditional simulations of the first day")
+
+#######################
+## local conditional ##
+#######################
+sTime <- Sys.time()
+krigedLocalSim <- krigeSTSimTB(formula= zinc ~ 1, data = STFDF(geometry(meuse), stf@time, data.frame(zinc=rep(meuse$zinc, 21))),
+                               newdata = stf_grid[1:500,], modelList = separableModel, nsim = 50, nLyrs = 500,
+                               nmaxTime=c(-40,20)*60) # tunit in secs, 
+Sys.time() - sTime
+
+stplot(krigedLocalSim[,1:12], main="local conditional simulation")
