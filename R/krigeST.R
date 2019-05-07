@@ -78,7 +78,7 @@ krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
     attr(modelList, "temporal unit") <- tUnit
   } else {
     tUnit <- tUnitModel
-    message("Using the following time unit: ", tUnit)
+    message("[Using the following time unit: ", tUnit, "]")
   }
   
   if (fullCovariance & any(c(nmax, nmaxTime) < Inf)) {
@@ -304,7 +304,7 @@ krigeST.df <- function(formula, data, newdata, modelList, beta, y, ...,
 # local spatio-temporal kriging
 krigeST.local <- function(formula, data, newdata, modelList, beta, nmax, stAni=NULL,
                           computeVar=FALSE, fullCovariance=FALSE, 
-                          bufferNmax=2, progress=TRUE) {
+                          bufferNmax=2, progress=FALSE) {
   
   # every data set is assumed to be STI*
   stopifnot(class(data) == "STIDF")
