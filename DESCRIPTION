@@ -7,7 +7,7 @@ Authors@R: c(person(given = "Edzer",
         role = c("aut", "cre"),
         email = "edzer.pebesma@uni-muenster.de",
         comment = c(ORCID = "0000-0001-8049-7069")),
-     person("Benedikt", "Graeler", role = "aut"))
+     person("Benedikt", "Graeler", role = "aut", comment = c(ORCID = "0000-0001-5443-4304")))
 Description: Variogram modelling; simple, ordinary and universal point or block (co)kriging; spatio-temporal kriging; sequential Gaussian or indicator (co)simulation; variogram and variogram map plotting utility functions; supports sf and stars.
 Depends: R (>= 2.10)
 Imports: utils, stats, graphics, methods, lattice, sp (>= 0.9-72), zoo,

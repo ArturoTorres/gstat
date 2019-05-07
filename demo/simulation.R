@@ -74,7 +74,7 @@ spplot(krigedSim[,1], paste0("sim",1:10), as.table=TRUE, main="unconditional siu
 
 sTime <- Sys.time()
 krigedSim <- krigeSTSimTB(formula= zinc ~ 1, data = STFDF(geometry(meuse), stf@time, data.frame(zinc=rep(meuse$zinc, 21))),
-                          newdata = stf_grid[1:500,], modelList = separableModel, nsim = 50, nLyrs = 500)
+                          newdata = stf_grid[1:1000,], modelList = separableModel, nsim = 25, nLyrs = 500)
 Sys.time() - sTime
 
 # plot one simulation along time
@@ -91,7 +91,7 @@ spplot(krigedSim[,1], paste0("sim",1:10), as.table=TRUE, main="conditional simul
 #######################
 sTime <- Sys.time()
 krigedLocalSim <- krigeSTSimTB(formula= zinc ~ 1, data = STFDF(geometry(meuse), stf@time, data.frame(zinc=rep(meuse$zinc, 21))),
-                               newdata = stf_grid[1:500,], modelList = separableModel, nsim = 50, nLyrs = 500,
+                               newdata = stf_grid[1:1000,], modelList = separableModel, nsim = 25, nLyrs = 500,
                                nmaxTime=c(-40,20)*60) # tunit in secs, 
 Sys.time() - sTime
 

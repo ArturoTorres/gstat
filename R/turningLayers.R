@@ -61,8 +61,8 @@ krigeSTMultiple <- function(formula, from, to, modelList, multiVarMatrix, nmax=I
     addAttrToGeom(to, as.data.frame(res))
   } else {
     res <- krigeSTMultiple.global(formula = formula, from = from, to = to, 
-                           modelList = modelList, 
-                           multiVarMatrix = multiVarMatrix)
+                                  modelList = modelList, 
+                                  multiVarMatrix = multiVarMatrix)
     addAttrToGeom(to, as.data.frame(res))
   }
 }
@@ -107,13 +107,13 @@ krigeSTMultiple.local <- function(formula, from, to, modelList, multiVarMatrix, 
   newDataHasData <- "data" %in% slotNames(to)
   
   coerceDataToIrregular <- !(class(from) %in% c("STI", "STIDF"))
-
+  
   res <- NULL
   
   # loop over all times in to
   if (progress)
     pb <- txtProgressBar(min = 0, max = length(timeInd), initial = 0, style = 3)
-
+  
   for (i in 1:length(timeInd)) {
     if (progress)
       setTxtProgressBar(pb, i)
@@ -127,21 +127,18 @@ krigeSTMultiple.local <- function(formula, from, to, modelList, multiVarMatrix, 
     newdataSlice <- to[ , time, drop=FALSE]
     
     # check whether timeblock is empty (sparse data, diverging alignment of to@time and from@time)
-    if (nrow(dataBlock@data) == 0) {
+    if (nrow(dataBlock@data) == 0 || nrow(multiVarBlock@data) == 0) {
       warning(paste("Empty time block around:", time, 
                     "Predictions are set to 'NA'. Increase the tmeporal window."))
-      emptVal <- rep(NA, length(newdataSlice@sp))
       
-      res <- rbind(res, data.frame(var1.pred = emptVal))
-      next;
-    }
-    
-    if (nrow(multiVarBlock@data) == 0) {
-      warning(paste("Empty time block around:", time, 
-                    "Predictions are set to 'NA'. Increase the tmeporal window."))
-      emptVal <- rep(NA, length(newdataSlice@sp))
+      emptVal <- matrix(NA, 
+                        nrow = length(newdataSlice@sp),
+                        ncol = ncol(multiVarMatrix@data))
+      eemptVal <- as.data.frame(emptVal)
+      colnames(emptVal) <- colnames(multiVarMatrix@data)
       
-      res <- rbind(res, data.frame(var1.pred = emptVal))
+      res <- rbind(res, emptVal)
+      
       next;
     }
     
@@ -173,7 +170,7 @@ krigeSTMultiple.local <- function(formula, from, to, modelList, multiVarMatrix, 
                                           modelList = modelList))
     }  
   }
-
+  
   return(res)
 }
 
@@ -311,15 +308,15 @@ krigeSTSimTB <- function(formula, data, newdata, modelList, nsim,
                           nmax = nmax, nmaxTime = nmaxTime)
   
   # interpolate to observation locations from the simulated grids for each simulation
-  simMeanObsLoc <- krigeSTMultiple(as.formula(paste0("var1.pred ~", formula[[3]])),
-                                   obsMeanField, data, 
+  simMeanObsLoc <- krigeSTMultiple(as.formula(paste0("sim1 ~", formula[[3]])),
+                                   newSimData, data, 
                                    modelList = modelList, 
                                    multiVarMatrix = newSimData,
                                    nmax = nmax, nmaxTime = nmaxTime, tUnit = tUnit)
   
   # interpolate from kriged mean sim at observed locations back to the grid for mean surface of the simulations
-  simMeanFields <- krigeSTMultiple(as.formula(paste0(varName, "~", formula[[3]])), 
-                                   data, newdata, 
+  simMeanFields <- krigeSTMultiple(as.formula(paste0("sim1 ~", formula[[3]])), 
+                                   simMeanObsLoc, newdata, 
                                    modelList = modelList,
                                    multiVarMatrix =  simMeanObsLoc,
                                    nmax = nmax, nmaxTime = nmaxTime, tUnit = tUnit)
