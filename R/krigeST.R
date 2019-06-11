@@ -66,6 +66,12 @@ krigeST <- function(formula, data, newdata, modelList, beta, y, ...,
   stopifnot(nmax > 0)
   
   tUnitModel <- attr(modelList, "temporal unit")
+  if (is.function(modelList) & is.null(tUnitModel)) { # in case of area2point kriging
+    dots <- list(...)
+    if (is.null(dots$model))
+      stop("An argument 'model' containing the spatio-temporal variogram model needs to be provided for area2point kriging.")
+    tUnitModel <- attr(dots$model, "temporal unit")
+  }
   tUnitData <- units(abs(outer(index(data@time[1]), index(newdata@time[1]), "-")))
   
   if (is.null(tUnitModel)) {
@@ -138,8 +144,8 @@ krigeST.df <- function(formula, data, newdata, modelList, beta, y, ...,
     if (computeVar) {
       if (is(newdata@sp, "SpatialLines") || is(newdata@sp, "SpatialPolygons"))
         stop("Varying target support (SpatialLines, SpatialPolygons) for kriging variance is not implemented.")
-      c0 = as.numeric(modelList(newdata[1, drop=FALSE],
-                                newdata[1, drop=FALSE]))
+      c0 = as.numeric(modelList(newdata[1, 1, drop=FALSE],
+                                newdata[1, 1, drop=FALSE], ...))
     }
   }
   
