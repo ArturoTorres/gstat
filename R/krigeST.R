@@ -138,8 +138,8 @@ krigeST.df <- function(formula, data, newdata, modelList, beta, y, ...,
     if (computeVar) {
       if (is(newdata@sp, "SpatialLines") || is(newdata@sp, "SpatialPolygons"))
         stop("Varying target support (SpatialLines, SpatialPolygons) for kriging variance is not implemented.")
-      c0 = as.numeric(modelList(newdata[1, drop=FALSE],
-                                newdata[1, drop=FALSE]))
+      c0 = as.numeric(modelList(newdata[1, 1, drop=FALSE],
+                                newdata[1, 1, drop=FALSE], ...))
     }
   }
   
